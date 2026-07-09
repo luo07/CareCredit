@@ -1,0 +1,8 @@
+{
+  "name": "CareCredit",
+  "description": "A time-banking mutual aid system for university communities, enabling students to exchange help for credits and foster a supportive campus environment.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

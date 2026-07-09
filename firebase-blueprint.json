@@ -1,0 +1,125 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "A CareCredit user (student or admin).",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "bio": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "supportNeeds": { "type": "array", "items": { "type": "string" } },
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "credits": { "type": "number" },
+        "trustScore": { "type": "number" },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "name", "credits", "trustScore", "role", "isActive", "createdAt", "updatedAt"]
+    },
+    "task": {
+      "title": "Task",
+      "description": "A help request or offer.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["request", "offer"] },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "expectedDuration": { "type": "number" },
+        "location": { "type": "string" },
+        "urgency": { "type": "string", "enum": ["low", "medium", "high"] },
+        "status": { "type": "string", "enum": ["open", "accepted", "in_progress", "completed", "cancelled"] },
+        "creatorId": { "type": "string" },
+        "acceptedById": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "title", "description", "category", "expectedDuration", "location", "status", "creatorId", "createdAt", "updatedAt"]
+    },
+    "message": {
+      "title": "Message",
+      "description": "Task-based communication.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    },
+    "transaction": {
+      "title": "Transaction",
+      "description": "CareCredit transfer record.",
+      "type": "object",
+      "properties": {
+        "taskId": { "type": "string" },
+        "fromUserId": { "type": "string" },
+        "toUserId": { "type": "string" },
+        "amount": { "type": "number" },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["taskId", "fromUserId", "toUserId", "amount", "createdAt"]
+    },
+    "feedback": {
+      "title": "Feedback",
+      "description": "Two-way feedback after task completion.",
+      "type": "object",
+      "properties": {
+        "taskId": { "type": "string" },
+        "reviewerId": { "type": "string" },
+        "revieweeId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["taskId", "reviewerId", "revieweeId", "rating", "createdAt"]
+    },
+    "report": {
+      "title": "Report",
+      "description": "Safety report.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string" },
+        "reportedUserId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "reviewed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterId", "reportedUserId", "category", "description", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "Stores user profiles."
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/task" },
+      "description": "Stores help offers and requests."
+    },
+    "/tasks/{taskId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/message" },
+      "description": "Stores messages related to a specific task."
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/transaction" },
+      "description": "Ledger of point exchanges."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/feedback" },
+      "description": "Stores feedback records between users."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/report" },
+      "description": "Stores user and task safety reports."
+    }
+  }
+}

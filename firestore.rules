@@ -1,0 +1,282 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidUser(data) {
+      return data.email is string && data.email.size() <= 256 &&
+             data.name is string && data.name.size() <= 100 &&
+             (!('completedTaskCount' in data) || (data.completedTaskCount is number && data.completedTaskCount >= 0)) &&
+             data.credits is number &&
+             data.trustScore is number &&
+             data.role is string && (data.role == 'student' || data.role == 'admin') &&
+             data.isActive is bool;
+    }
+
+    function isValidTask(data) {
+      return data.type in ['request', 'offer'] &&
+             data.status in ['open', 'accepted', 'in_progress', 'completed', 'cancelled'] &&
+             data.creatorId is string && data.creatorId.size() <= 128 &&
+             (!('acceptedById' in data) || (data.acceptedById is string && data.acceptedById.size() <= 128)) &&
+             (!('acceptedAt' in data) || data.acceptedAt is timestamp);
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasOnly(['senderId', 'text', 'createdAt']) &&
+             data.senderId is string && data.senderId.size() <= 128 &&
+             data.text is string && data.text.size() > 0 && data.text.size() <= 1000;
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasOnly(['taskId', 'fromUserId', 'toUserId', 'amount', 'reason', 'createdAt']) &&
+             data.taskId is string && data.taskId.size() <= 128 &&
+             data.fromUserId is string && data.fromUserId.size() <= 128 &&
+             data.toUserId is string && data.toUserId.size() <= 128 &&
+             data.amount is number && data.amount > 0 &&
+             data.reason is string && data.reason.size() <= 200;
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasOnly(['taskId', 'reviewerId', 'revieweeId', 'rating', 'comment', 'createdAt']) &&
+             data.taskId is string && data.taskId.size() <= 128 &&
+             data.reviewerId is string && data.reviewerId.size() <= 128 &&
+             data.revieweeId is string && data.revieweeId.size() <= 128 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
+    }
+
+    function isValidReport(data) {
+      return data.keys().hasOnly(['reporterId', 'reportedUserId', 'taskId', 'category', 'description', 'status', 'createdAt']) &&
+             data.reporterId is string && data.reporterId.size() <= 128 &&
+             data.reportedUserId is string && data.reportedUserId.size() <= 128 &&
+             data.taskId is string && data.taskId.size() <= 128 &&
+             data.category is string && data.category.size() <= 50 &&
+             data.description is string && data.description.size() <= 1000 &&
+             data.status in ['pending', 'reviewed'];
+    }
+
+    function isValidUserCoupon(data) {
+      return data.keys().hasOnly(['userId', 'couponId', 'name', 'vendor', 'description', 'code', 'status', 'expiresAt', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.couponId is string && data.couponId.size() <= 128 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.vendor is string && data.vendor.size() <= 100 &&
+             data.description is string && data.description.size() <= 500 &&
+             data.code is string && data.code.size() <= 100 &&
+             data.status in ['active', 'used', 'expired'];
+    }
+
+    function isValidAppMessage(data) {
+      return data.keys().hasOnly(['userId', 'title', 'content', 'type', 'read', 'rewardAmount', 'createdAt', 'updatedAt']) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 1000 &&
+             data.type in ['reward', 'admin', 'reminder'] &&
+             data.read is bool &&
+             (!('rewardAmount' in data) || (data.rewardAmount is number && data.rewardAmount > 0));
+    }
+
+    // --- Collections ---
+
+    // 1. Users
+    match /users/{userId} {
+      allow read: if isSignedIn(); // Public profiles for now, consider splitting private info if needed.
+
+      allow create: if isSignedIn() && isValidId(userId) && userId == request.auth.uid &&
+        isValidUser(incoming()) &&
+        incoming().keys().hasAll(['email', 'name', 'credits', 'trustScore', 'role', 'isActive', 'createdAt', 'updatedAt']) &&
+        incoming().email == request.auth.token.email &&
+        incoming().credits == 2.0 && // Starter credits
+        incoming().trustScore == 100 &&
+        incoming().role == 'student' &&
+        incoming().isActive == true &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if (isSignedIn() && isValidId(userId) && isValidUser(incoming())) &&
+        (
+          isAdmin() ||
+          (
+            userId == request.auth.uid &&
+            incoming().email == existing().email &&
+            incoming().trustScore == existing().trustScore &&
+            incoming().role == existing().role &&
+            incoming().isActive == existing().isActive &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'bio', 'studentId', 'contactNumber', 'avatarUrl', 'skills', 'supportNeeds', 'languages', 'privacyPreferences', 'credits', 'redeemedCoupons', 'claimedAchievements', 'completedTaskCount', 'updatedAt'])
+          )
+        );
+    }
+
+    // 2. Tasks
+    match /tasks/{taskId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(taskId);
+      
+      allow create: if isSignedIn() && isValidId(taskId) &&
+        isValidTask(incoming()) &&
+        incoming().keys().hasAll(['type', 'title', 'description', 'category', 'expectedDuration', 'location', 'status', 'creatorId', 'createdAt', 'updatedAt']) &&
+        incoming().creatorId == request.auth.uid &&
+        incoming().status == 'open' &&
+        !('acceptedById' in incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if (isSignedIn() && isValidId(taskId) && isValidTask(incoming())) &&
+        (
+          isAdmin() ||
+          (
+            (existing().creatorId == request.auth.uid || ('acceptedById' in existing() && existing().acceptedById == request.auth.uid) || ('acceptedById' in incoming() && incoming().acceptedById == request.auth.uid))
+          )
+        );
+    }
+
+    // 3. Messages
+    match /tasks/{taskId}/messages/{messageId} {
+      allow list: if isSignedIn() && isValidId(taskId) && 
+        (get(/databases/$(database)/documents/tasks/$(taskId)).data.creatorId == request.auth.uid || 
+         get(/databases/$(database)/documents/tasks/$(taskId)).data.acceptedById == request.auth.uid);
+      allow get: if isSignedIn() && isValidId(taskId) && isValidId(messageId) &&
+        (get(/databases/$(database)/documents/tasks/$(taskId)).data.creatorId == request.auth.uid || 
+         get(/databases/$(database)/documents/tasks/$(taskId)).data.acceptedById == request.auth.uid);
+
+      allow create: if isSignedIn() && isValidId(taskId) && isValidId(messageId) &&
+        isValidMessage(incoming()) &&
+        incoming().keys().hasAll(['senderId', 'text', 'createdAt']) &&
+        incoming().senderId == request.auth.uid &&
+        (get(/databases/$(database)/documents/tasks/$(taskId)).data.creatorId == request.auth.uid || 
+         get(/databases/$(database)/documents/tasks/$(taskId)).data.acceptedById == request.auth.uid) &&
+        incoming().createdAt == request.time;
+        
+      allow update: if false; // Messages are immutable
+      allow delete: if false; // Messages cannot be deleted
+    }
+
+    // 4. Transactions -> Admin only or System-managed via Cloud Functions.
+    // For now, let's say only admin can write, or we allow specific strict conditions if no cloud functions.
+    // Time banking is sensitive. With rules alone, updating two users' balances + transaction document is hard safely.
+    // If no cloud functions, we can trust the client under STRICT rules. But atomicity limit is hard.
+    // We will make transactions writeable only via admin, and assume client uses Cloud Functions or Admin SDK for this,
+    // OR we allow them with strict `getAfter` atomicity. Let's make it immutable and strictly validated for now.
+    match /transactions/{transactionId} {
+      allow list: if isSignedIn() && (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid);
+      allow get: if isSignedIn() && isValidId(transactionId) && (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(transactionId) && 
+        isValidTransaction(incoming()) &&
+        incoming().keys().hasAll(['taskId', 'fromUserId', 'toUserId', 'amount', 'reason', 'createdAt']) &&
+        // We only allow if fromUserId or toUserId is the current user. But honestly, CareCredits should be securely transferred.
+        // Let's use existsAfter to ensure users' credits update properly? It's complex. 
+        // For prototype, we'll allow client writes but ensure one of the parties is the auth.
+        (incoming().fromUserId == request.auth.uid || incoming().toUserId == request.auth.uid) &&
+        incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // 5. Feedback
+    match /feedback/{feedbackId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(feedbackId);
+      
+      allow create: if isSignedIn() && isValidId(feedbackId) &&
+        isValidFeedback(incoming()) &&
+        incoming().keys().hasAll(['taskId', 'reviewerId', 'revieweeId', 'rating', 'createdAt']) &&
+        incoming().reviewerId == request.auth.uid &&
+        (get(/databases/$(database)/documents/tasks/$(incoming().taskId)).data.creatorId == request.auth.uid || 
+         get(/databases/$(database)/documents/tasks/$(incoming().taskId)).data.acceptedById == request.auth.uid) &&
+        incoming().createdAt == request.time;
+        
+      allow update, delete: if false; // Feedback is immutable once posted
+    }
+
+    // 6. Reports
+    match /reports/{reportId} {
+      allow read: if isAdmin(); // Admin only
+      
+      allow create: if isSignedIn() && isValidId(reportId) &&
+        isValidReport(incoming()) &&
+        incoming().keys().hasAll(['reporterId', 'reportedUserId', 'taskId', 'category', 'description', 'status', 'createdAt']) &&
+        incoming().reporterId == request.auth.uid &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time;
+        
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // 7. User Coupons
+    match /userCoupons/{couponId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && isValidId(couponId) && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() && isValidId(couponId) &&
+        isValidUserCoupon(incoming()) &&
+        incoming().keys().hasAll(['userId', 'couponId', 'name', 'vendor', 'description', 'code', 'status', 'expiresAt', 'createdAt', 'updatedAt']) &&
+        incoming().userId == request.auth.uid &&
+        incoming().status == 'active' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+        
+      allow update: if (isSignedIn() && isValidId(couponId) && isValidUserCoupon(incoming())) &&
+        (
+          isAdmin() ||
+          (
+            existing().userId == request.auth.uid &&
+            incoming().userId == existing().userId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+      allow delete: if false;
+    }
+
+    // 8. Inbox Messages
+    match /messages/{messageId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && isValidId(messageId) && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() && isValidId(messageId) &&
+        isValidAppMessage(incoming()) &&
+        incoming().keys().hasAll(['userId', 'title', 'content', 'type', 'read', 'createdAt', 'updatedAt']) &&
+        incoming().userId == request.auth.uid && // allow self sending for reminders
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+        
+      allow update: if (isSignedIn() && isValidId(messageId) && isValidAppMessage(incoming())) &&
+        (
+          isAdmin() ||
+          (
+            existing().userId == request.auth.uid &&
+            incoming().userId == existing().userId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt'])
+          )
+        );
+      allow delete: if false;
+    }
+
+  }
+}

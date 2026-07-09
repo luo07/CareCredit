@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--app-bg, #f8fafc);
+    color: var(--app-text, #1e293b);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  html.theme-warm {
+    --app-bg: #fffaf0;
+    --app-text: #431407;
+    --color-indigo-50: #fff7ed;
+    --color-indigo-100: #ffedd5;
+    --color-indigo-200: #fed7aa;
+    --color-indigo-300: #fdba74;
+    --color-indigo-400: #fb923c;
+    --color-indigo-500: #f97316;
+    --color-indigo-600: #ea580c;
+    --color-indigo-700: #c2410c;
+    --color-indigo-800: #9a3412;
+    --color-indigo-900: #7c2d12;
+    --color-indigo-950: #431407;
+  }
+
+  html.theme-ocean {
+    --app-bg: #f0f8ff;
+    --app-text: #082f49;
+    --color-indigo-50: #f0f9ff;
+    --color-indigo-100: #e0f2fe;
+    --color-indigo-200: #bae6fd;
+    --color-indigo-300: #7dd3fc;
+    --color-indigo-400: #38bdf8;
+    --color-indigo-500: #0ea5e9;
+    --color-indigo-600: #0284c7;
+    --color-indigo-700: #0369a1;
+    --color-indigo-800: #075985;
+    --color-indigo-900: #0c4a6e;
+    --color-indigo-950: #082f49;
+  }
+
+  html.theme-nature {
+    --app-bg: #f0fff4;
+    --app-text: #064e3b;
+    --color-indigo-50: #ecfdf5;
+    --color-indigo-100: #d1fae5;
+    --color-indigo-200: #a7f3d0;
+    --color-indigo-300: #6ee7b7;
+    --color-indigo-400: #34d399;
+    --color-indigo-500: #10b981;
+    --color-indigo-600: #059669;
+    --color-indigo-700: #047857;
+    --color-indigo-800: #065f46;
+    --color-indigo-900: #064e3b;
+    --color-indigo-950: #022c22;
+  }
+}
+
+@layer components {
+  .vibrant-card {
+    border-radius: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease-in-out;
+  }
+}
+
