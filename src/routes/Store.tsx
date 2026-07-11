@@ -70,6 +70,30 @@ export default function Store() {
         updatedAt: new Date()
       });
 
+        // Play success sound
+        try {
+          const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+
+          gainNode.gain.setValueAtTime(0, ctx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+          console.error("Audio API not supported", e);
+        }
+
     } catch (error) {
       console.error(error);
       alert(error instanceof Error ? error.message : "Unknown error");
