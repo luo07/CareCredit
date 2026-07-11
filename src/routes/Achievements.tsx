@@ -128,7 +128,7 @@ export default function Achievements() {
                    {achievement.type === 'weekly' ? <Target className="w-6 h-6" /> : <Star className="w-6 h-6" />}
                  </div>
                  <div className="flex items-center gap-1 font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
-                   +{achievement.reward} UC
+                   +{achievement.reward} UU
                  </div>
                </div>
                

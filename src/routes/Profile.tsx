@@ -124,7 +124,7 @@ export default function Profile() {
               <HeartHandshake className="w-3.5 h-3.5" /> Your Wallet
             </div>
             <div className="text-3xl font-black mb-4">
-              {profile.credits.toFixed(1)} <span className="text-sm font-normal opacity-80">UC</span>
+              {profile.credits.toFixed(1)} <span className="text-sm font-normal opacity-80">UU</span>
             </div>
             <div className="flex flex-col gap-1.5">
                <Link to="/store" className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors">

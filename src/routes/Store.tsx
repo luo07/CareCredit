@@ -37,7 +37,7 @@ export default function Store() {
       
       const newCouponRef = collection(db, 'userCoupons');
       const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
-      const code = `UC-${randomPart}`;
+      const code = `UU-${randomPart}`;
       
       await addDoc(newCouponRef, {
         userId: profile.id,
@@ -119,7 +119,7 @@ export default function Store() {
           </Link>
           <div className="bg-indigo-600 text-white px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-indigo-600/30">
             <HeartHandshake className="w-5 h-5" />
-            <span className="font-bold">{profile.credits.toFixed(1)} UC Available</span>
+            <span className="font-bold">{profile.credits.toFixed(1)} UU Available</span>
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function Store() {
                    {coupon.vendor}
                  </div>
                  <div className="flex items-center gap-1 font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
-                   {coupon.cost} UC
+                   {coupon.cost} UU
                  </div>
                </div>
                <h3 className="text-xl font-bold text-slate-900 mb-2">{coupon.name}</h3>

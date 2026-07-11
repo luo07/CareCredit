@@ -42,7 +42,7 @@ export default function Layout() {
             <HeartHandshake className="w-5 h-5" />
             <span>Balance</span>
           </div>
-          <span>{profile?.credits?.toFixed(1) || '0.0'} UC</span>
+          <span>{profile?.credits?.toFixed(1) || '0.0'} UU</span>
         </div>
       </div>
 

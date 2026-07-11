@@ -102,11 +102,11 @@ export default function CreateTask() {
                 value={formData.expectedDuration}
                 onChange={(e) => setFormData({...formData, expectedDuration: Number(e.target.value)})}
               >
-                <option value={15}>15 mins (0.25 UC)</option>
-                <option value={30}>30 mins (0.5 UC)</option>
-                <option value={60}>1 hour (1 UC)</option>
-                <option value={90}>1.5 hours (1.5 UC)</option>
-                <option value={120}>2 hours (2 UC)</option>
+                <option value={15}>15 mins (0.25 UU)</option>
+                <option value={30}>30 mins (0.5 UU)</option>
+                <option value={60}>1 hour (1 UU)</option>
+                <option value={90}>1.5 hours (1.5 UU)</option>
+                <option value={120}>2 hours (2 UU)</option>
               </select>
             </div>
           </div>

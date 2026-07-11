@@ -137,7 +137,7 @@ export default function Inbox() {
                       onClick={(e) => { e.stopPropagation(); handleClaimReward(message); }}
                       className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm shadow-md transition-colors"
                     >
-                      Claim {message.rewardAmount} UC
+                      Claim {message.rewardAmount} UU
                     </button>
                   )}
                   {message.type === 'reward' && message.read && (

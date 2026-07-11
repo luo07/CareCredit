@@ -60,7 +60,7 @@ export default function TaskCard({ task }: TaskCardProps) {
         </div>
         <div className="flex gap-2">
           <span className="text-[10px] font-bold uppercase px-2 py-1 bg-indigo-soft text-indigo-600 rounded-md underline">
-            {creditValue} UC
+            {creditValue} UU
           </span>
         </div>
       </div>

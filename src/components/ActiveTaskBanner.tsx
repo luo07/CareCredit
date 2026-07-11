@@ -120,7 +120,7 @@ export default function ActiveTaskBanner() {
 
             <div className="flex items-center justify-between text-sm mb-6">
               <span className="font-semibold text-slate-700">Reward:</span>
-              <span className="text-indigo-600 font-bold">{(activeTask.expectedDuration / 60).toFixed(1)} UC</span>
+              <span className="text-indigo-600 font-bold">{(activeTask.expectedDuration / 60).toFixed(1)} UU</span>
             </div>
 
             <button
@@ -129,7 +129,7 @@ export default function ActiveTaskBanner() {
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700 text-white"
             >
               <CheckCircle2 className="w-5 h-5" />
-              {completing ? 'Completing...' : isFinished ? 'Submit Task & Claim UC' : 'Wait for time to finish...'}
+              {completing ? 'Completing...' : isFinished ? 'Submit Task & Claim UU' : 'Wait for time to finish...'}
             </button>
             <p className="text-center text-xs text-slate-400 mt-3">
               {isFinished ? 'Task duration has ended. You can now claim your reward.' : 'You must wait until the expected duration passes.'}
